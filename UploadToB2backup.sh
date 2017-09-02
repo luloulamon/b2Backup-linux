@@ -34,7 +34,7 @@ if [ $initialSync = 1 ]; then
 	for i in $dirs
 	do
 		files=(`find $i -type f`)
-		test=(`echo \`realpath ${files[0]}\` | openssl -e -base64 -aes-256-cbc -pass file:id_rsa.key`)
+		test=(`echo \`realpath ${files[0]}\` | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.key`)
 		echo -en "\n"
 		echo ${#files[@]}
 		test2=(`echo $test | openssl -d -base64 -aes-256-cbc -pass file:id_rsa.key`)
