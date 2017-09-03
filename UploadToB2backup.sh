@@ -31,14 +31,21 @@ fi
 
 if [ $initialSync = 1 ]; then
 	echo "Initial Sync running..."
-	for i in $dirs
+	#simplistic encryption of the full path and name to obfuscate the backup names
+	for i in ${dirs[@]}
 	do
 		files=(`find $i -type f`)
-		test=(`echo \`realpath ${files[0]}\` | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.key`)
-		echo -en "\n"
-		echo ${#files[@]}
-		test2=(`echo $test | openssl -d -base64 -aes-256-cbc -pass file:id_rsa.key`)
-		#realpath 
+		#echo ${#dirs[@]}
+		#echo ${#files[@]}
+		#echo ${files[*]}
+		for j in ${files[@]}
+		do
+			test=(`echo \`realpath $j\` | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.pub.key -nosalt`) #access array item ${files[0]}
+			echo `realpath $j`
+			echo $test
+			echo -en "\n"
+			#realpath 
+		done
 	done
 else
 	echo "Starting find files changed..."
