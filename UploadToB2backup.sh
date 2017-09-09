@@ -3,7 +3,12 @@
 initialSync="initialSync.config"
 exec `dos2unix DirsToBackup.config` #convert Windows EOL to Unix
 dirs="DirsToBackup.config"
+tempFolder="/tmp"
+accountId=$(cat apikey.config | cut -f1 -d :)
+apiKey=$(cat apikey.config | cut -f2 -d :)
 
+echo "Account ID: $accountId"
+echo `b2 authorize-account $accountId $apiKey`
 echo "Checking config files"
 
 #check initialSync file exists
@@ -40,11 +45,19 @@ if [ $initialSync = 1 ]; then
 		#echo ${files[*]}
 		for j in ${files[@]}
 		do
-			test=(`echo \`realpath $j\` | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.pub.key -nosalt`) #access array item ${files[0]}
+			fullpath=(`realpath $j`)
+			filename=(`echo $fullpath | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.pub.key -nosalt | tr -d "/"`) #access array item ${files[0]}
 			echo `realpath $j`
-			echo $test
-			echo -en "\n"
-			#realpath 
+			#echo $filename
+			#echo -en "\n"
+			checksum=(`sha1sum ${fullpath}`); #create a file checksum
+			echo "checksum $checksum"
+			filename="$filename-$checksum.enc"
+			openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:id_rsa.key -nosalt
+			
+			b2 upload-file --sha1 $checksum --threads 4 mybuckets "c:\cygwin64\tmp\\$filename" $filename
+			
+			
 		done
 	done
 else
