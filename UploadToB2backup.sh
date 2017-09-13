@@ -1,7 +1,8 @@
 #!/bin/bash
 
-initialSync="initialSync.config"
-exec `dos2unix DirsToBackup.config` #convert Windows EOL to Unix
+initialSync="initialSync.config" #sync file to state last sync date
+bucketName="lenovo-laptop"
+#exec `dos2unix DirsToBackup.config` #convert Windows EOL to Unix
 dirs="DirsToBackup.config"
 tempFolder="/tmp"
 accountId=$(cat apikey.config | cut -f1 -d :)
@@ -21,7 +22,8 @@ if [ -f "$initialSync" ]; then
 		echo "Sync File Read"
 	fi
 else 
-	echo "No sync file"
+	echo "No sync file, creating blank sync file"
+    touch $initialSync
 fi #initialSync check end
 
 #check dirs file exists
@@ -30,11 +32,11 @@ if [ -f "$dirs" ]; then
 	dirs=$(<$dirs)
 	echo "Dirs loaded"
 else
-	echo "No directory list - touching to create file"
+	echo "No directory list - touching to create file, enter directories to back up in this file"
 	touch $dirs
 fi 
 
-if [ $initialSync = 1 ]; then
+if [ -s $intialSync ]; then
 	echo "Initial Sync running..."
 	#simplistic encryption of the full path and name to obfuscate the backup names
 	for i in ${dirs[@]}
@@ -47,26 +49,28 @@ if [ $initialSync = 1 ]; then
 		do
 			fullpath=(`realpath $j`)
 			filename=(`echo $fullpath | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.pub.key -nosalt | tr -d "/"`) #access array item ${files[0]}
-			echo `realpath $j`
+			echo "Uploading `realpath $j`"
 			#echo $filename
 			#echo -en "\n"
-			checksum=(`sha1sum ${fullpath}`); #create a file checksum
+	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:id_rsa.key -nosalt
+			checksum=(`sha1sum /tmp/$filename`) #create a file checksum
 			echo "checksum $checksum"
-			filename="$filename-$checksum.enc"
-			openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:id_rsa.key -nosalt
-			
-			b2 upload-file --sha1 $checksum --threads 4 mybuckets "c:\cygwin64\tmp\\$filename" $filename
+			b2 upload-file --sha1 $checksum --threads 4 $bucketName "/tmp/$filename" $filename-$checksum.enc
 			
 			
 		done
 	done
 else
-	echo "Starting find files changed..."
-	for i in $dirs
-	do
-		changed=$(find $i -cmin -3600 -type f)
-		echo $changed 
-	done
+    if [ -s $dirs ]; then
+	    echo "Starting find files changed..."
+	    for i in $dirs
+	    do
+		    changed=$(find $i -cmin -3600 -type f)
+		    echo $changed 
+	    done
+	 else
+	    echo "Empty Dirs file"
+	 fi
 fi
 
 
