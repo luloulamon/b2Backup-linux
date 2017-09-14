@@ -1,13 +1,10 @@
 #!/bin/bash
 
-initialSync="initialSync.config" #sync file to state last sync date
-bucketName="lenovo-laptop"
-#exec `dos2unix DirsToBackup.config` #convert Windows EOL to Unix
-dirs="DirsToBackup.config"
-tempFolder="/tmp"
+source "./client.config" #read config entries from client config file
+
 accountId=$(cat apikey.config | cut -f1 -d :)
 apiKey=$(cat apikey.config | cut -f2 -d :)
-
+echo "$dirs"
 echo "Account ID: $accountId"
 echo `b2 authorize-account $accountId $apiKey`
 echo "Checking config files"
@@ -23,7 +20,7 @@ if [ -f "$initialSync" ]; then
 	fi
 else 
 	echo "No sync file, creating blank sync file"
-    touch $initialSync
+    touch "$initialSync"
 fi #initialSync check end
 
 #check dirs file exists
@@ -33,7 +30,7 @@ if [ -f "$dirs" ]; then
 	echo "Dirs loaded"
 else
 	echo "No directory list - touching to create file, enter directories to back up in this file"
-	touch $dirs
+	touch "$dirs"
 fi 
 
 if [ -s $intialSync ]; then
@@ -52,10 +49,11 @@ if [ -s $intialSync ]; then
 			echo "Uploading `realpath $j`"
 			#echo $filename
 			#echo -en "\n"
+			fileChecksum=(`sha1sum ${$fullpath}`)
 	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:id_rsa.key -nosalt
 			checksum=(`sha1sum /tmp/$filename`) #create a file checksum
 			echo "checksum $checksum"
-			b2 upload-file --sha1 $checksum --threads 4 $bucketName "/tmp/$filename" $filename-$checksum.enc
+			b2 upload-file --sha1 $checksum --threads 4 $bucketName "/tmp/$filename" $filename-$fileChecksum.enc
 			
 			
 		done
