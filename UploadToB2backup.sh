@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "./client.config" #read config entries from client config file
+source "client.config" #read config entries from client config file
 
 accountId=$(cat apikey.config | cut -f1 -d :)
 apiKey=$(cat apikey.config | cut -f2 -d :)
