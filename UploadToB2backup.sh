@@ -1,11 +1,12 @@
 #!/bin/bash
 
+#clean all config files to unix format
+exec find -type f -name "*.config" | xargs dos2unix
 source "./client.config" #read config entries from client config file
-
-accountId=$(cat apikey.config | cut -f1 -d :)
-apiKey=$(cat apikey.config | cut -f2 -d :)
+accountId=$(cat apikey.config | cut -f1 -d : |  tr -d '[:space:]')
+apiKey=$(cat apikey.config | cut -f2 -d : |  tr -d '[:space:]')
 echo "$dirs"
-echo "Account ID: $accountId"
+echo "Account ID: $accountId $apiKey"
 echo `b2 authorize-account $accountId $apiKey`
 echo "Checking config files"
 
@@ -35,25 +36,28 @@ fi
 
 if [ -s $intialSync ]; then
 	echo "Initial Sync running..."
+    echo "directory ${#dirs[@]}"
+    echo ${dirs[1]}
 	#simplistic encryption of the full path and name to obfuscate the backup names
-	for i in ${dirs[@]}
+	for i in "${dirs[@]}"
 	do
+	    echo $i
 		files=(`find $i -type f`)
-		#echo ${#dirs[@]}
-		#echo ${#files[@]}
-		#echo ${files[*]}
-		for j in ${files[@]}
+		
+		echo ${#files[@]}
+		echo ${files[*]}
+		for j in "${files[@]}"
 		do
 			fullpath=(`realpath $j`)
 			filename=(`echo $fullpath | openssl enc -e -base64 -aes-256-cbc -pass file:id_rsa.pub.key -nosalt | tr -d "/"`) #access array item ${files[0]}
 			echo "Uploading `realpath $j`"
 			#echo $filename
 			#echo -en "\n"
-			fileChecksum=(`sha1sum ${$fullpath}`)
+			fileChecksum=(`sha1sum $fullpath`)
 	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:id_rsa.key -nosalt
 			checksum=(`sha1sum /tmp/$filename`) #create a file checksum
 			echo "checksum $checksum"
-			b2 upload-file --sha1 $checksum --threads 4 $bucketName "/tmp/$filename" $filename-$fileChecksum.enc
+			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc"
 			
 			
 		done
