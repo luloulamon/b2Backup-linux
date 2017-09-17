@@ -1,15 +1,18 @@
 #!/bin/bash
 
-#clean all config files to unix format
-exec find -type f -name "*.config" | xargs dos2unix
-source "./client.config" #read config entries from client config file
-accountId=$(cat apikey.config | cut -f1 -d : |  tr -d '[:space:]')
-apiKey=$(cat apikey.config | cut -f2 -d : |  tr -d '[:space:]')
-echo "$dirs"
-echo "Account ID: $accountId $apiKey"
-echo `b2 authorize-account $accountId $apiKey`
-echo "Checking config files"
+exec find -type f -name "*.config" | xargs dos2unix #clean all config files to unix format
 
+source "client.config" #read config entries from client config file
+accountId=$(cat apikey.config | cut -f1 -d : |  tr -d '[:space:]') #read api credentials from config file
+apiKey=$(cat apikey.config | cut -f2 -d : |  tr -d '[:space:]')
+
+if [ $DEBUG == "1" ]; then
+	echo "$dirs"
+	echo "Account ID: $accountId $apiKey"
+	echo `b2 authorize-account $accountId $apiKey`
+fi
+
+echo "Checking config files"
 #check initialSync file exists
 echo "Checking sync file"
 if [ -f "$initialSync" ]; then 
@@ -44,8 +47,8 @@ if [ -s $intialSync ]; then
 	    echo $i
 		files=(`find $i -type f`)
 		
-		echo ${#files[@]}
-		echo ${files[*]}
+		#echo ${#files[@]}
+		#echo ${files[*]}
 		for j in "${files[@]}"
 		do
 			fullpath=(`realpath $j`)
