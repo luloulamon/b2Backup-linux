@@ -6,6 +6,21 @@ source "client.config" #read config entries from client config file
 accountId=$(cat apikey.config | cut -f1 -d : |  tr -d '[:space:]') #read api credentials from config file
 apiKey=$(cat apikey.config | cut -f2 -d : |  tr -d '[:space:]')
 
+function writeLog {
+
+if [ -t 0 ]
+then
+    data=$1
+	echo "nopipe"
+else
+    data=$(cat)
+	echo $data >> $logFile
+fi
+
+}
+
+
+
 if [ $DEBUG == "1" ]; then
 	echo "$dirs"
 	echo "Account ID: $accountId $apiKey"
@@ -40,11 +55,11 @@ fi
 if [ -s $intialSync ]; then
 	echo "Initial Sync running..."
     echo "directory ${#dirs[@]}"
-    echo ${dirs[1]}
+    #echo ${dirs[1]} 
 	#simplistic encryption of the full path and name to obfuscate the backup names
 	for i in "${dirs[@]}"
 	do
-	    echo $i
+	    #echo $i
 		files=(`find $i -type f`)
 		
 		#echo ${#files[@]}
@@ -60,7 +75,7 @@ if [ -s $intialSync ]; then
 	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:id_rsa.key -nosalt
 			checksum=(`sha1sum /tmp/$filename`) #create a file checksum
 			echo "checksum $checksum"
-			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc"
+			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
 			
 			
 		done
@@ -77,6 +92,7 @@ else
 	    echo "Empty Dirs file"
 	 fi
 fi
+
 
 
 
