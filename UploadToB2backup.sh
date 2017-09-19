@@ -105,6 +105,7 @@ if [ -s $intialSync ]; then
 			
 		done
 	done
+	echo `date` >> $initialSync
 else
     if [ -s $dirs ]; then
 	    echo "Starting find files changed..."
