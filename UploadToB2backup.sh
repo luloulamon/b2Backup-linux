@@ -40,9 +40,6 @@ function ifDebug {
     fi
 }
 
-
-
-
 echo "$dirs" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
 echo `b2 authorize-account $accountId $apiKey`| ifDebug
@@ -80,7 +77,7 @@ if [ -s $intialSync ]; then
 	echo "Initial Sync running..." | writeLog
     echo "directory ${#dirs[@]}" | ifDebug
     
-	#simplistic encryption of the full path and name to obfuscate the backup names
+	#iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
 	    echo "Current item $i" | ifDebug
@@ -88,9 +85,11 @@ if [ -s $intialSync ]; then
 		files=(`find $i -type f`)
 		echo "File list ${#files[@]}" | ifDebug
 		#echo ${files[*]}
+		#iterate through all the files in the dir
 		for j in "${files[@]}"
 		do
 			fullpath=(`realpath $j`)
+			#simplistic encryption of the full path and name to obfuscate the backup names
 			filename=(`echo $fullpath | openssl enc -e -base64 -aes-256-cbc -pass file:$key1 -nosalt | tr -d "/"`) #create encrypted filename
 			echo "Uploading $fullpath" | writeLog
 		    echo "Filename $filename" | ifDebug
@@ -105,20 +104,35 @@ if [ -s $intialSync ]; then
 			
 		done
 	done
-	echo `date` >> $initialSync
+	echo "Initial Sync Done `date`" | writeLog
+	echo `date` > $initialSync #date the initialSync
 else
-    if [ -s $dirs ]; then
-	    echo "Starting find files changed..."
-	    for i in $dirs
-	    do
-		    changed=$(find $i -cmin -3600 -type f)
-		    echo $changed 
-	    done
-	 else
-	    echo "Empty Dirs file"
-	 fi
+	echo "Not First Sync, checking for differences" | writeLog
+    #iterate through all directories in the dir list file
+	for i in "${dirs[@]}"
+	do
+	    echo "Current item $i" | ifDebug
+
+		files=(`find $i -type f`)
+		echo "File list ${#files[@]}" | ifDebug
+		#echo ${files[*]}
+		#iterate through all the files in the dir
+		for j in "${files[@]}"
+		do
+			fullpath=(`realpath $j`)
+			#simplistic encryption of the full path and name to obfuscate the backup names
+			filename=(`echo $fullpath | openssl enc -e -base64 -aes-256-cbc -pass file:$key1 -nosalt | tr -d "/"`) #create encrypted filename
+			echo "Uploading $fullpath" | writeLog
+		    echo "Filename $filename" | ifDebug
+			#echo -en "\n"
+			fileChecksum=(`sha1sum $fullpath`) #create filechecksum to add as part of filename
+	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:$key2 -nosalt #create encrypted file to upload to backblaze
+			checksum=(`sha1sum /tmp/$filename`) #create a file checksum for encrypted file for backblaze upload confirmation
+			echo "Encrypted checksum $checksum" | ifDebug
+			#b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
+			rm -f "/tmp/$filename" #remove encrypted file from /tmp
+			
+			
+		done
+	done
 fi
-
-
-
-
