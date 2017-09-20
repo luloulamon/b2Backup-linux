@@ -105,7 +105,7 @@ if [ -s $intialSync ]; then
 		done
 	done
 	echo "Initial Sync Done `date`" | writeLog
-	echo `date` > $initialSync #date the initialSync
+	date > $initialSync #date the initialSync
 else
 	echo "Not First Sync, checking for differences" | writeLog
     #iterate through all directories in the dir list file
