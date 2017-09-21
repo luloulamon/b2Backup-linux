@@ -25,6 +25,24 @@ function writeLog {
 
 }
 
+function writeULog {
+
+    if [ -t 0 ]
+    then
+        data=$1
+	    echo "nopipe"
+    else
+        data=$(cat)
+        if [ $DEBUG -eq "1" ]; then #if debugging echo onto stdout as well
+	        echo  $data >> $uploadLog
+	        echo "DEBUG:: $data"
+	    else
+	        echo  $data >> $uploadLog
+	    fi
+    fi
+
+}
+
 #function to output debug messages onto logfile as stdout
 function ifDebug {
     if [ $DEBUG -eq "1" ]; then
@@ -40,6 +58,8 @@ function ifDebug {
     fi
 }
 
+currTime=`date`
+echo "Backup Script Starting... $currTime" | writeLog
 echo "$dirs" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
 echo `b2 authorize-account $accountId $apiKey`| ifDebug
@@ -73,7 +93,7 @@ fi
 
 echo "Done checking config files" | writeLog
 
-if [ -s $intialSync ]; then
+if [ -s "$intialSync" ]; then
 	echo "Initial Sync running..." | writeLog
     echo "directory ${#dirs[@]}" | ifDebug
     
@@ -100,12 +120,13 @@ if [ -s $intialSync ]; then
 			echo "Encrypted checksum $checksum" | ifDebug
 			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
 			rm -f "/tmp/$filename" #remove encrypted file from /tmp
-			
+			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
 			
 		done
 	done
-	echo "Initial Sync Done `date`" | writeLog
-	date > $initialSync #date the initialSync
+	currTime=`date`
+	echo "Initial Sync Done $currTime" | writeLog
+	echo $currTime > $initialSync #date the initialSync
 else
 	echo "Not First Sync, checking for differences" | writeLog
     #iterate through all directories in the dir list file
@@ -113,8 +134,8 @@ else
 	do
 	    echo "Current item $i" | ifDebug
 
-		files=(`find $i -type f`)
-		echo "File list ${#files[@]}" | ifDebug
+		files=(`find $i -type f -newermt "1 week ago"`)
+		echo "File list ${#files[@]}" | writeLog
 		#echo ${files[*]}
 		#iterate through all the files in the dir
 		for j in "${files[@]}"
@@ -131,8 +152,10 @@ else
 			echo "Encrypted checksum $checksum" | ifDebug
 			#b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
 			rm -f "/tmp/$filename" #remove encrypted file from /tmp
-			
+			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
 			
 		done
 	done
+	currTime=`date`
+	echo "Sync Done $currTime" | writeLog
 fi
