@@ -69,7 +69,7 @@ echo "Checking config files" | writeLog
 
 #check initialSync file exists
 echo "Checking sync file" | writeLog
-if [ -f "$initialSync" ]; then 
+if [ -f "$initialSyncFile" ]; then 
 	initialSync=$(head -n 1 $initialSyncFile)
 	echo "First line: $initialSync and length is ${#initialSync}" | ifDebug
 	if [  ${#initialSync} -eq 0 ]; then #check if the file is empty or null
@@ -79,7 +79,7 @@ if [ -f "$initialSync" ]; then
 	fi
 else 
 	echo "No sync file, creating blank sync file" | writeLog
-    touch "$initialSync"
+    touch "$initialSyncFile"
 fi #initialSync check end
 
 #check dirs file exists
@@ -153,7 +153,7 @@ else
 	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:$key2 -nosalt #create encrypted file to upload to backblaze
 			checksum=(`sha1sum /tmp/$filename`) #create a file checksum for encrypted file for backblaze upload confirmation
 			echo "Encrypted checksum $checksum" | ifDebug
-			#b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
+			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
 			rm -f "/tmp/$filename" #remove encrypted file from /tmp
 			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
 			
