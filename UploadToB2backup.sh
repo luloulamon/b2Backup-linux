@@ -70,8 +70,9 @@ echo "Checking config files" | writeLog
 #check initialSync file exists
 echo "Checking sync file" | writeLog
 if [ -f "$initialSync" ]; then 
-	initialSync=$(<$initialSync)
-	if [ -z $initialSync ]; then #check if the file is empty or null
+	initialSync=$(head -n 1 $initialSyncFile)
+	echo "First line: $initialSync and length is ${#initialSync}" | ifDebug
+	if [  ${#initialSync} -eq 0 ]; then #check if the file is empty or null
 		echo "Empty Sync file" | writeLog
 	else
 		echo "Sync File Read" | writeLog
@@ -93,7 +94,8 @@ fi
 
 echo "Done checking config files" | writeLog
 
-if [ -s "$intialSync" ]; then
+#check sync file has length greater than 0
+if [ ${#initialSync} -eq 0  ]; then
 	echo "Initial Sync running..." | writeLog
     echo "directory ${#dirs[@]}" | ifDebug
     
@@ -126,17 +128,18 @@ if [ -s "$intialSync" ]; then
 	done
 	currTime=`date`
 	echo "Initial Sync Done $currTime" | writeLog
-	echo $currTime > $initialSync #date the initialSync
+	echo "$currTime" > $initialSyncFile #date the initialSync
 else
-	echo "Not First Sync, checking for differences" | writeLog
+	echo "Not First Sync, checking for updates" | writeLog
     #iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
 	    echo "Current item $i" | ifDebug
 
-		files=(`find $i -type f -newermt "1 week ago"`)
+		files=(`find $i -type f -newermt "1 week ago"`) #find files that have beed modified/updated 1 week ago
 		echo "File list ${#files[@]}" | writeLog
-		#echo ${files[*]}
+		echo "Files ${files[*]}" | ifDebug
+		
 		#iterate through all the files in the dir
 		for j in "${files[@]}"
 		do
@@ -157,5 +160,5 @@ else
 		done
 	done
 	currTime=`date`
-	echo "Sync Done $currTime" | writeLog
+	echo "Update Sync Done $currTime" | writeLog
 fi
