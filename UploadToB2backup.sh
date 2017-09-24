@@ -117,11 +117,11 @@ if [ ${#initialSync} -eq 0  ]; then
 		    echo "Filename $filename" | ifDebug
 			#echo -en "\n"
 			fileChecksum=(`sha1sum $fullpath`) #create filechecksum to add as part of filename
-	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:$key2 -nosalt #create encrypted file to upload to backblaze
-			checksum=(`sha1sum /tmp/$filename`) #create a file checksum for encrypted file for backblaze upload confirmation
+	 		openssl enc -e -in $fullpath -out "$tempFolder/$filename" -aes-256-cbc -pass file:$key2 -nosalt #create encrypted file to upload to backblaze
+			checksum=(`sha1sum $tempFolder/$filename`) #create a file checksum for encrypted file for backblaze upload confirmation
 			echo "Encrypted checksum $checksum" | ifDebug
-			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
-			rm -f "/tmp/$filename" #remove encrypted file from /tmp
+			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
+			rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
 			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
 			
 		done
@@ -136,7 +136,7 @@ else
 	do
 	    echo "Current item $i" | ifDebug
 
-		files=(`find $i -type f -newermt "1 week ago"`) #find files that have beed modified/updated 1 week ago
+		files=(`find $i -type f -newermt "$fileModifiedAge"`) #find files that have beed modified/updated 1 week ago
 		echo "File list ${#files[@]}" | writeLog
 		echo "Files ${files[*]}" | ifDebug
 		
@@ -150,11 +150,11 @@ else
 		    echo "Filename $filename" | ifDebug
 			#echo -en "\n"
 			fileChecksum=(`sha1sum $fullpath`) #create filechecksum to add as part of filename
-	 		openssl enc -e -in $fullpath -out "/tmp/$filename" -aes-256-cbc -pass file:$key2 -nosalt #create encrypted file to upload to backblaze
-			checksum=(`sha1sum /tmp/$filename`) #create a file checksum for encrypted file for backblaze upload confirmation
+	 		openssl enc -e -in $fullpath -out "$tempFolder/$filename" -aes-256-cbc -pass file:$key2 -nosalt #create encrypted file to upload to backblaze
+			checksum=(`sha1sum $tempFolder/$filename`) #create a file checksum for encrypted file for backblaze upload confirmation
 			echo "Encrypted checksum $checksum" | ifDebug
-			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "/tmp/$filename" "$filename-$fileChecksum.enc" | writeLog
-			rm -f "/tmp/$filename" #remove encrypted file from /tmp
+			b2 upload-file --sha1 $checksum --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
+			rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
 			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
 			
 		done
