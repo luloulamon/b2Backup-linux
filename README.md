@@ -30,7 +30,7 @@ client.config - Required to have variables set for configuration
 
 ##########################################################################
 
- bucketName="laptop"
+ bucketName="laptop" 
  initialSyncFile="initialSync.config" #sync file to state last sync date
  dirs="DirsToBackup.config"
  tempFolder="/tmp"             #folder to store temp files as they are uploaded into B2. These are cleaned after run
