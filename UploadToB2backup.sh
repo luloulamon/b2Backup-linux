@@ -25,6 +25,7 @@ function writeLog {
 
 }
 
+#function to write onto log files for the manifest
 function writeULog {
 
     if [ -t 0 ]
@@ -43,7 +44,7 @@ function writeULog {
 
 }
 
-#function to output debug messages onto logfile as stdout
+#function to output debug messages onto logfile as stdout, data has to be piped into it
 function ifDebug {
     if [ $DEBUG -eq "1" ]; then
         if [ -t 0 ]
