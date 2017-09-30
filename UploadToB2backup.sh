@@ -1,10 +1,10 @@
 #!/bin/bash
 
-exec find -type f -name "*.config" | xargs dos2unix #clean all config files to unix format
+find -type f -name "*.config" | xargs dos2unix #clean all config files to unix format
 
 source "client.config" #read config entries from client config file
-accountId=$(cat apikey.config | cut -f1 -d : |  tr -d '[:space:]') #read api credentials from config file
-apiKey=$(cat apikey.config | cut -f2 -d : |  tr -d '[:space:]')
+accountId=$(cut -f1 -d : apikey.config |  tr -d '[:space:]') #read api credentials from config file
+apiKey=$(cut -f2 -d : apikey.config |  tr -d '[:space:]')
 
 #function to write onto log files for echo statements
 function writeLog {
@@ -15,11 +15,11 @@ function writeLog {
 	    echo "nopipe"
     else
         data=$(cat)
-        if [ $DEBUG -eq "1" ]; then #if debugging echo onto stdout as well
-	        echo  $data >> $logFile
+        if [ "$DEBUG" -eq "1" ]; then #if debugging echo onto stdout as well
+	        echo  "$data" >> "$logFile"
 	        echo "DEBUG:: $data"
 	    else
-	        echo  $data >> $logFile
+	        echo  "$data" >> "$logFile"
 	    fi
     fi
 
@@ -34,11 +34,11 @@ function writeULog {
 	    echo "nopipe"
     else
         data=$(cat)
-        if [ $DEBUG -eq "1" ]; then #if debugging echo onto stdout as well
-	        echo  $data >> $uploadLog
+        if [ "$DEBUG" -eq "1" ]; then #if debugging echo onto stdout as well
+	        echo  "$data" >> "$uploadLog"
 	        echo "DEBUG:: $data"
 	    else
-	        echo  $data >> $uploadLog
+	        echo  "$data" >> "$uploadLog"
 	    fi
     fi
 
@@ -46,24 +46,24 @@ function writeULog {
 
 #function to output debug messages onto logfile as stdout, data has to be piped into it
 function ifDebug {
-    if [ $DEBUG -eq "1" ]; then
+    if [ "$DEBUG" -eq "1" ]; then
         if [ -t 0 ]
         then
             data=$1
 	        echo "No Message"
         else
             data=$(cat)
-            echo "DEBUG:: $data" >> $logFile
+            echo "DEBUG:: $data" >> "$logFile"
 	        echo "DEBUG:: $data"
         fi
     fi
 }
 
-currTime=`date`
+currTime=$(date)
 echo "Backup Script Starting... $currTime" | writeLog
 echo "$dirs" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
-echo `b2 authorize-account $accountId $apiKey`| ifDebug
+b2 authorize-account "$accountId" "$apiKey"| ifDebug
 
 
 echo "Checking config files" | writeLog
@@ -103,9 +103,9 @@ if [ ${#initialSync} -eq 0  ]; then
 	#iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
-	    echo "Current item $i" | ifDebug
+	    echo "Current dir $i" | ifDebug
 
-		files=(`find $i -type f`)
+		files=$(find $i -type f )
 		echo "File list ${#files[@]}" | ifDebug
 		#echo ${files[*]}
 		#iterate through all the files in the dir
