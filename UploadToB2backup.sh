@@ -60,21 +60,26 @@ function ifDebug {
 }
 
 function encryptFile {
-    fullpath=$(realpath "$1")
-	
-	#simplistic encryption of the full path and name to obfuscate the backup names
-	filename=$(openssl enc -e -in "$fullpath "-base64 -aes-256-cbc -pass file:"$key1" -nosalt | tr -d "/") #create encrypted filename
+    
 	echo "Uploading $fullpath" | writeLog
     echo "Filename $filename" | ifDebug
 	#echo -en "\n"
 	
-	fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
-	enc e -openssl -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
+	openssl enc e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
 	checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
 	echo "Encrypted checksum $checksum" | ifDebug
 	b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
 	rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
 	echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
+}
+
+function encryptFileName {
+    
+    fullpath=$(realpath "$1")	
+	#simplistic encryption of the full path and name to obfuscate the backup names
+	encFileName=$(openssl enc -e -in "$fullpath"-base64 -aes-256-cbc -pass file:"$key1" -nosalt | tr -d "/") #create encrypted filename
+	fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
+	echo "$encFileName-$fileChecksum.enc"
 }
 
 currTime=$(date)
@@ -123,7 +128,7 @@ if [ ${#initialSync} -eq 0  ]; then
 	do
 	    echo "Current dir $i" | ifDebug
 
-		files=$(find $i -type f )
+		files=$(find $i -maxdepth 1 -type f )
 		echo "File list ${#files[@]}" | ifDebug
 		#echo "Files ${files[*]}"
 		#iterate through all the files in the dir
@@ -132,7 +137,7 @@ if [ ${#initialSync} -eq 0  ]; then
 			
 			fullpath=$(realpath "$j")
 			#simplistic encryption of the full path and name to obfuscate the backup names
-			filename=$(openssl enc -e -in "$fullpath "-base64 -aes-256-cbc -pass file:"$key1" -nosalt | tr -d "/") #create encrypted filename
+			filename=$(encryptFileName $j) #create encrypted filename
 			echo "Uploading $fullpath" | writeLog
 		    echo "Filename $filename" | ifDebug
 			#echo -en "\n"
