@@ -60,17 +60,16 @@ function ifDebug {
 }
 
 function encryptFile {
-    
-	echo "Uploading $fullpath" | writeLog
-    echo "Filename $filename" | ifDebug
-	#echo -en "\n"
-	
+
+    fullpath=$(realpath "$1")	
+    filename=$2
+    encName=$3     
 	openssl enc e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
 	checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
 	echo "Encrypted checksum $checksum" | ifDebug
-	b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
+	b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$encName" | writeLog
 	rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
-	echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
+	echo "$fullpath - $encName" | writeULog
 }
 
 function encryptFileName {
