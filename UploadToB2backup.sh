@@ -49,7 +49,7 @@ echo "Done checking config files" | writeLog
 if [ ${#initialSync} -eq 0  ]; then
 	echo "Initial Sync running..." | writeLog
     echo "directory ${#dirs[@]}" | ifDebug
-    
+    counter=0
 	#iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
@@ -83,6 +83,7 @@ if [ ${#initialSync} -eq 0  ]; then
 				#echo -en "\n"
 				fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
 				encryptFile "$j" "$filename"
+				counter++
 				
 			done
 		else
@@ -90,6 +91,7 @@ if [ ${#initialSync} -eq 0  ]; then
 		fi
 	done
 	currTime=$(date)
+	echo "Total Files Uploaded: $counter"
 	echo "Initial Sync Done $currTime" | writeLog
 	echo "$currTime" > "$initialSyncFile" #date the initialSync
 else
@@ -97,32 +99,44 @@ else
     #iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
-	    echo "Current item $i" | ifDebug
-
-		files=$(find "$i" -type f -newermt "$fileModifiedAge") #find files that have beed modified/updated 1 week ago
-		echo "File list ${#files[@]}" | writeLog
-		#echo "Files ${files[*]}" | ifDebug
+	    echo "Current dir $i" | ifDebug
 		
+		#read the find results and place into array properly, this covers files with special chars in the names
+		files=()
+		while IFS=  read -r -d $'\0'; do
+			files+=("$REPLY")
+		done < <(find $i -type f -newermt "$fileModifiedAge" -print0)
+		echo "File list ${#files[@]}" | ifDebug
+		#echo "File list ${files[@]}" | ifDebug
+		#echo "Files ${files[*]}"
 		#iterate through all the files in the dir
-		for j in "${files[@]}"
-		do
-		    #echo "Current file $j" | ifDebug
-			fullpath=$(realpath "$j")
-			#simplistic encryption of the full path and name to obfuscate the backup names
-			filename=$(openssl enc -e -in "$fullpath" -base64 -aes-256-cbc -pass file:"$key1" -nosalt | tr -d "/") #create encrypted filename
-			echo "Uploading $fullpath" | writeLog
-		    echo "Filename $filename" | ifDebug
-			#echo -en "\n"
-			fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
-	 		openssl enc -e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
-			checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
-			echo "Encrypted checksum $checksum" | ifDebug
-			b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
-			rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
-			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
-			
-		done
+		read -p "Do you want to start backing up? " -n 1 -r
+		echo ""
+		if [ "$DEBUG" -eq "0" ]; then
+		        REPLY="y"
+		fi
+		if [[ $REPLY =~ ^[Yy]$ ]]
+		then
+			for j in "${files[@]}"
+			do
+				
+				fullpath=$(realpath "$j")
+				echo "Uploading $fullpath" | writeLog
+				
+				filename=$(encryptFileName "$j") #create encrypted filename
+				
+				echo "Filename $filename" | ifDebug
+				#echo -en "\n"
+				fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
+				encryptFile "$j" "$filename"
+				counter++
+				
+			done
+		else
+			exit 500
+		fi
 	done
 	currTime=$(date)
+	echo "Total Files Uploaded: $counter"
 	echo "Update Sync Done $currTime" | writeLog
 fi
