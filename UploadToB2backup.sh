@@ -10,7 +10,7 @@ apiKey=$(cut -f2 -d : apikey.config |  tr -d '[:space:]')
 
 currTime=$(date)
 echo "Backup Script Starting... $currTime" | writeLog
-echo "$dirs" | ifDebug
+echo "$dirsList" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
 b2 authorize-account "$accountId" "$apiKey"| ifDebug
 
@@ -66,6 +66,9 @@ if [ ${#initialSync} -eq 0  ]; then
 		#iterate through all the files in the dir
 		read -p "Do you want to start backing up? " -n 1 -r
 		echo ""
+		if [ "$DEBUG" -eq "0" ]; then
+		        REPLY="y"
+		fi
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
 			for j in "${files[@]}"
@@ -73,19 +76,12 @@ if [ ${#initialSync} -eq 0  ]; then
 				
 				fullpath=$(realpath "$j")
 				echo "Uploading $fullpath" | writeLog
-				#simplistic encryption of the full path and name to obfuscate the backup names
 				
 				filename=$(encryptFileName "$j") #create encrypted filename
 				
 				echo "Filename $filename" | ifDebug
 				#echo -en "\n"
 				fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
-				#openssl enc -e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
-				#checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
-				#echo "Encrypted checksum $checksum" | ifDebug
-				#b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
-				#rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
-				#echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
 				encryptFile "$j" "$filename"
 				
 			done

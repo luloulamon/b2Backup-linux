@@ -62,7 +62,7 @@ function encryptFile {
 	openssl enc -e -in "$fullpath" -aes-256-cbc -pass file:"$key2" -nosalt > "$tempFolder/$encName" #create encrypted file to upload to backblaze
 	filechecksum=$(sha1sum "$tempFolder/$encName" | awk '{print $1}') #create a file checksum for encrypted file for backblaze upload confirmation
 	echo "Encrypted checksum $filechecksum" | ifDebug
-	b2 upload-file --sha1 "$filechecksum" --threads 4 "$bucketName" "$tempFolder/$encName" "$encName-$filechecksum.enc" | writeLog
+	b2 upload-file --sha1 "$filechecksum" --threads 4 "$bucketName" "$tempFolder/$encName" "$encName" | writeLog
 	rm -f "$tempFolder/$encName" #remove encrypted file from $tempFolder
 	echo "Temp File removed $tempFolder/$encName" | writeLog
 	echo "$fullpath - $encName" | writeULog
