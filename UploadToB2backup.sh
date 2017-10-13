@@ -1,85 +1,12 @@
 #!/bin/bash
 
-find -type f -name "*.config" -exec + | xargs dos2unix #clean all config files to unix format
+find -type f -name "*.config" | xargs dos2unix #clean all config files to unix format
+find -type f -name "*.bash" | xargs dos2unix #clean all config files to unix format
 
 source "client.config" #read config entries from client config file
+source "functions.bash" #read functions file
 accountId=$(cut -f1 -d : apikey.config |  tr -d '[:space:]') #read api credentials from config file
 apiKey=$(cut -f2 -d : apikey.config |  tr -d '[:space:]')
-
-#function to write onto log files for echo statements
-function writeLog {
-
-    if [ -t 0 ]
-    then
-        data=$1
-	    echo "nopipe"
-    else
-        data=$(cat)
-        if [ "$DEBUG" -eq "1" ]; then #if debugging echo onto stdout as well
-	        echo  "$data" >> "$logFile"
-	        echo "DEBUG:: $data"
-	    else
-	        echo  "$data" >> "$logFile"
-	    fi
-    fi
-
-}
-
-#function to write onto log files for the manifest
-function writeULog {
-
-    if [ -t 0 ]
-    then
-        data=$1
-	    echo "nopipe"
-    else
-        data=$(cat)
-        if [ "$DEBUG" -eq "1" ]; then #if debugging echo onto stdout as well
-	        echo  "$data" >> "$uploadLog"
-	        echo "DEBUG:: $data"
-	    else
-	        echo  "$data" >> "$uploadLog"
-	    fi
-    fi
-
-}
-
-#function to output debug messages onto logfile as stdout, data has to be piped into it
-function ifDebug {
-    if [ "$DEBUG" -eq "1" ]; then
-        if [ -t 0 ]
-        then
-            data=$1
-	        echo "No Message"
-        else
-            data=$(cat)
-            echo "DEBUG:: $data" >> "$logFile"
-	        echo "DEBUG:: $data"
-        fi
-    fi
-}
-
-function encryptFile {
-
-    fullpath=$(realpath "$1")	
-    filename=$2
-    encName=$3     
-	openssl enc e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
-	checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
-	echo "Encrypted checksum $checksum" | ifDebug
-	b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$encName" | writeLog
-	rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
-	echo "$fullpath - $encName" | writeULog
-}
-
-function encryptFileName {
-    
-    fullpath=$(realpath "$1")	
-	#simplistic encryption of the full path and name to obfuscate the backup names
-	encFileName=$(openssl enc -e -in "$fullpath"-base64 -aes-256-cbc -pass file:"$key1" -nosalt | tr -d "/") #create encrypted filename
-	fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
-	echo "$encFileName-$fileChecksum.enc"
-}
 
 currTime=$(date)
 echo "Backup Script Starting... $currTime" | writeLog
@@ -107,12 +34,13 @@ fi #initialSync check end
 
 #check dirs file exists
 echo "Checking dirs file" | writeLog
-if [ -f "$dirs" ]; then
-	dirs=$(<$dirs)
+if [ -f "$dirsList" ]; then
+	#dirs=$(<$dirs)
+	readarray -t dirs < $dirsList #force to read as proper array
 	echo "Dirs loaded" | writeLog
 else
 	echo "No directory list - touching to create file, enter directories to back up in this file" | writeLog
-	touch "$dirs"
+	touch "$dirsList"
 fi 
 
 echo "Done checking config files" | writeLog
@@ -126,29 +54,44 @@ if [ ${#initialSync} -eq 0  ]; then
 	for i in "${dirs[@]}"
 	do
 	    echo "Current dir $i" | ifDebug
-
-		files=$(find $i -maxdepth 1 -type f )
+		
+		#read the find results and place into array properly, this covers files with special chars in the names
+		files=()
+		while IFS=  read -r -d $'\0'; do
+			files+=("$REPLY")
+		done < <(find $i -type f -print0)
 		echo "File list ${#files[@]}" | ifDebug
+		#echo "File list ${files[@]}" | ifDebug
 		#echo "Files ${files[*]}"
 		#iterate through all the files in the dir
-		for j in "${files[@]}"
-		do
-			
-			fullpath=$(realpath "$j")
-			#simplistic encryption of the full path and name to obfuscate the backup names
-			filename=$(encryptFileName $j) #create encrypted filename
-			echo "Uploading $fullpath" | writeLog
-		    echo "Filename $filename" | ifDebug
-			#echo -en "\n"
-			fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
-	 		openssl enc -e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
-			checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
-			echo "Encrypted checksum $checksum" | ifDebug
-			b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
-			rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
-			echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
-			
-		done
+		read -p "Do you want to start backing up? " -n 1 -r
+		echo ""
+		if [[ $REPLY =~ ^[Yy]$ ]]
+		then
+			for j in "${files[@]}"
+			do
+				
+				fullpath=$(realpath "$j")
+				echo "Uploading $fullpath" | writeLog
+				#simplistic encryption of the full path and name to obfuscate the backup names
+				
+				filename=$(encryptFileName "$j") #create encrypted filename
+				
+				echo "Filename $filename" | ifDebug
+				#echo -en "\n"
+				fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
+				#openssl enc -e -in "$fullpath" -out "$tempFolder/$filename" -aes-256-cbc -pass file:"$key2" -nosalt #create encrypted file to upload to backblaze
+				#checksum=$(sha1sum "$tempFolder/$filename") #create a file checksum for encrypted file for backblaze upload confirmation
+				#echo "Encrypted checksum $checksum" | ifDebug
+				#b2 upload-file --sha1 "$checksum" --threads 4 "$bucketName" "$tempFolder/$filename" "$filename-$fileChecksum.enc" | writeLog
+				#rm -f "$tempFolder/$filename" #remove encrypted file from $tempFolder
+				#echo "$fullpath - $filename-$fileChecksum.enc" | writeULog
+				encryptFile "$j" "$filename"
+				
+			done
+		else
+			exit 500
+		fi
 	done
 	currTime=$(date)
 	echo "Initial Sync Done $currTime" | writeLog

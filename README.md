@@ -13,6 +13,8 @@ It is preferred to have 2 different password key files to prevent a single hack 
 
 Uses a base64 AES-256-CBC method to produce the filename as well as concatenating a sha1sum for confirmation of the file contents once decrypted (on restore).
 
+Filenames are also base64'd after the encryption to ensure they are valid as filenames
+
 Uses AES-256-CBC as well for the file encryption, this is simplified by not adding a salt for reduced complexity on decryption. 
 
 
@@ -32,8 +34,8 @@ client.config - Required to have variables set for configuration
 
  bucketName="laptop" 
  initialSyncFile="initialSync.config" #sync file to state last sync date
- dirs="DirsToBackup.config"
- tempFolder="/tmp"             #folder to store temp files as they are uploaded into B2. These are cleaned after run
+ dirsList="DirsToBackup.config"
+ tempFolder="/tmp"   #folder to store temp files as they are uploaded into B2. These are cleaned after run
  logFile="backup.log"
  uploadLog="upload.log"
  key1="id_rsa.pub.key"
