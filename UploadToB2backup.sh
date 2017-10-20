@@ -1,7 +1,8 @@
 #!/bin/bash
 
-find -type f -name "*.config" | xargs dos2unix #clean all config files to unix format
-find -type f -name "*.bash" | xargs dos2unix #clean all config files to unix format
+echo $(dos2unix ./*)
+#find . -type f -name "*.config" -print0 | xargs dos2unix #clean all config files to unix format
+#find . -type f -name "*.bash"  -print0 | xargs dos2unix #clean all config files to unix format
 
 source "client.config" #read config entries from client config file
 source "functions.bash" #read functions file
@@ -35,7 +36,7 @@ fi #initialSync check end
 #check dirs file exists
 echo "Checking dirs file" | writeLog
 if [ -f "$dirsList" ]; then
-	#dirs=$(<$dirs)
+
 	readarray -t dirs < $dirsList #force to read as proper array
 	echo "Dirs loaded" | writeLog
 else
@@ -50,6 +51,7 @@ if [ ${#initialSync} -eq 0  ]; then
 	echo "Initial Sync running..." | writeLog
     echo "directory ${#dirs[@]}" | ifDebug
     counter=0
+    
 	#iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
@@ -57,18 +59,20 @@ if [ ${#initialSync} -eq 0  ]; then
 		
 		#read the find results and place into array properly, this covers files with special chars in the names
 		files=()
+        #iterate through all the files in the dir
 		while IFS=  read -r -d $'\0'; do
 			files+=("$REPLY")
-		done < <(find $i -type f -print0)
-		echo "File list ${#files[@]}" | ifDebug
-		#echo "File list ${files[@]}" | ifDebug
-		#echo "Files ${files[*]}"
-		#iterate through all the files in the dir
+		done < <(find "$i" -type f -print0)
+		echo "Files in list ${#files[@]}" | ifDebug
+
+
 		read -p "Do you want to start backing up? " -n 1 -r
 		echo ""
 		if [ "$DEBUG" -eq "0" ]; then
 		        REPLY="y"
 		fi
+		
+		#Get response from user for debugging
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
 			for j in "${files[@]}"
@@ -81,9 +85,9 @@ if [ ${#initialSync} -eq 0  ]; then
 				
 				echo "Filename $filename" | ifDebug
 				#echo -en "\n"
-				fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
-				encryptFile "$j" "$filename"
-				counter++
+				
+				encryptFile "$j" "$filename"    #Encrypt file via function
+				counter=$((counter + 1))   #increase upload counter
 				
 			done
 		else
@@ -95,7 +99,8 @@ if [ ${#initialSync} -eq 0  ]; then
 	echo "Initial Sync Done $currTime" | writeLog
 	echo "$currTime" > "$initialSyncFile" #date the initialSync
 else
-	echo "Not First Sync, checking for updates" | writeLog
+    counter=0
+    echo "Not First Sync, checking for updates" | writeLog
     #iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
@@ -105,10 +110,9 @@ else
 		files=()
 		while IFS=  read -r -d $'\0'; do
 			files+=("$REPLY")
-		done < <(find $i -type f -newermt "$fileModifiedAge" -print0)
+		done < <(find "$i" -type f -newermt "$fileModifiedAge" -print0)
 		echo "File list ${#files[@]}" | ifDebug
-		#echo "File list ${files[@]}" | ifDebug
-		#echo "Files ${files[*]}"
+
 		#iterate through all the files in the dir
 		read -p "Do you want to start backing up? " -n 1 -r
 		echo ""
@@ -127,9 +131,9 @@ else
 				
 				echo "Filename $filename" | ifDebug
 				#echo -en "\n"
-				fileChecksum=$(sha1sum "$fullpath") #create filechecksum to add as part of filename
+				
 				encryptFile "$j" "$filename"
-				counter++
+				counter=$((counter + 1)) 
 				
 			done
 		else

@@ -78,5 +78,5 @@ function encryptFileName {
 }
 
 function backup {
-	echo "hello"
+	echo "hello stub for backup function"
 }
