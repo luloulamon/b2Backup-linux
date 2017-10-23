@@ -1,6 +1,6 @@
 bucketName=""
 initialSyncFile="initialSync.config" #sync file to state last sync date
-dirs="DirsToBackup.config"
+dirsList="DirsToBackup.config"
 tempFolder="/tmp"
 logFile="backup-$(date +%F).log"
 uploadLog="upload-$(date +%F).log"

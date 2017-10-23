@@ -15,7 +15,7 @@ echo "$dirsList" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
 b2 authorize-account "$accountId" "$apiKey"| ifDebug
 
-echo "Checking binaries.." + checkBinaries | ifDebug
+echo "Checking binaries.." $(checkBinaries) | ifDebug
 
 echo "Checking config files" | writeLog
 
@@ -111,8 +111,8 @@ else
 		files=()
 		while IFS=  read -r -d $'\0'; do
 			files+=("$REPLY")
-		done < <(find "$i" -type f -newermt "$fileModifiedAge" -print0)
-		echo "File list ${#files[@]}" | ifDebug
+		done < <(find "$i" -type f -newermt "$initialSync" -print0) #known issue where this seems to only work based on day and not the exact time.... so all files created or modified on the same day will be backed up again.
+		echo "File list ${files[@]}" | ifDebug
 
 		#iterate through all the files in the dir
 		read -p "Do you want to start backing up? " -n 1 -r
