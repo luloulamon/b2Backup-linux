@@ -95,9 +95,16 @@ function checkBinaries {
 }
 
 function restoreFilePath {
-	echo "stub"
+	encrypted="$1"
+	decrypted=$(echo "$encrypted" | base64 -d | openssl enc -d -base64 -A -aes-256-cbc -pass file:"$key1" -nosalt) #decrypt file path
+	echo "$decrypted"
 }
 
 function restoreFile {
-	echo "stub"
+	fileToRestore="$1"
+	localFile="$2"
+	tempFilename="toRestore-$(date +%s)"
+	b2 download-file-by-name "$bucketName" "$fileToRestore" "$tempFolder/$tempFilename"
+	openssl enc -d -in "$tempFolder/$tempFilename" -aes-256-cbc -pass file:"$key2" -nosalt > "$localFile" #create encrypted file to upload to backblaze
+	echo "Restored $localFile"
 }

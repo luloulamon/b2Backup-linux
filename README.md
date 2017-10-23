@@ -30,7 +30,6 @@ This is currently tested and being run on Windows 10 with the Ubuntu BASH shell 
 Read about it here: https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/
 
 
-
 ## Files:
 
 client.config - Required to have variables set for configuration, pointing to important files required for information such as directories to backup and API key.
@@ -49,5 +48,10 @@ upload log - stores a manifest/list of all files uploaded today and their corres
 
 backup log - log file for each showing what the script has done on that run
 
+## To Restore files
+The current Download script (Restore) is capable of restoring 1 file with the uploaded filename as the parameter provided. The filename can be found on the upload log
 
+```sh
+ ./DownloadFromBackup.sh "B2-FILENAME"
+```
 
