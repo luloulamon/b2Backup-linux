@@ -1,13 +1,18 @@
 #!/bin/bash
 
-echo $(dos2unix ./*)
+convertUnix="0"
+
+if [ "$convertUnix" -eq "1" ]; then
+	echo $(dos2unix ./*)
+fi
+
 #find . -type f -name "*.config" -print0 | xargs dos2unix #clean all config files to unix format
 #find . -type f -name "*.bash"  -print0 | xargs dos2unix #clean all config files to unix format
 
 source "client.config" #read config entries from client config file
 source "functions.bash" #read functions file
-accountId=$(cut -f1 -d : apikey.config |  tr -d '[:space:]') #read api credentials from config file
-apiKey=$(cut -f2 -d : apikey.config |  tr -d '[:space:]')
+accountId=$(cut -f1 -d : "$apiKeyFile" |  tr -d '[:space:]') #read api credentials from config file
+apiKey=$(cut -f2 -d : "$apiKeyFile" |  tr -d '[:space:]')
 
 currTime=$(date)
 echo "Backup Script Starting... $currTime" | writeLog
@@ -106,12 +111,12 @@ else
 	for i in "${dirs[@]}"
 	do
 	    echo "Current dir $i" | ifDebug
-		
+
 		#read the find results and place into array properly, this covers files with special chars in the names
 		files=()
 		while IFS=  read -r -d $'\0'; do
 			files+=("$REPLY")
-		done < <(find "$i" -type f -newermt "$initialSync" -print0) #known issue where this seems to only work based on day and not the exact time.... so all files created or modified on the same day will be backed up again.
+		done < <(find "$i" -type f -newerct "$initialSync" -print0) #known issue where this seems to only work based on day and not the exact time.... so all files created or modified on the same day will be backed up again.
 		echo "File list ${files[@]}" | ifDebug
 
 		#iterate through all the files in the dir
