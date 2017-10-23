@@ -1,6 +1,8 @@
 ##########################################################################################
 # b2Backup-linux
- Uses bash script with b2 python CLI to encrypt and upload to a Backblaze B2 backup bucket
+ Uses bash script with b2 python CLI to encrypt and upload to a Backblaze B2 backup bucket.
+
+Just a simple project as I wanted to implement my own backup system that fully encrypts the files but still retains paths for future restores.
 
 
 ##########################################################################################
@@ -19,7 +21,7 @@ Uses AES-256-CBC as well for the file encryption, this is simplified by not addi
 
 
 ## REQUIREMENT:
-Since this is a bash script, this obviously requires BASH. 
+Since this is a bash script, this obviously requires BASH.
 
 This is currently tested and being run on Windows 10 with the Ubuntu BASH shell system running as well as ArchLinux.
 
@@ -31,17 +33,17 @@ Read about it here: https://www.howtogeek.com/249966/how-to-install-and-use-the-
 
 ## Files:
 
-client.config - Required to have variables set for configuration
+client.config - Required to have variables set for configuration, pointing to important files required for information such as directories to backup and API key.
 
-DirsToBackup.config - List of directory paths to check for files and backup, creates a blank one when not available.
+DirsToBackup.config - List of directory paths to check for files and backup, creates a blank one when not available. This name can be changed in the client.config tile to any name.
 
-apikey.config - file that contains the Backblaze App API key in the format "ACCOUNTID:APIKEY" where the account id and API key are separated by ":"
+apikey.config - file that contains the Backblaze App API key in the format "ACCOUNTID:APIKEY" where the account id and API key are separated by ":". This file name can be changed in the client.config file.
 
-### DEBUG:
+#### DEBUG:
 
 Can enable debug logging and terminal echo by enabling DEBUG=1 on the client.config file.
 
-### LOGS:
+#### LOGS:
 
 upload log - stores a manifest/list of all files uploaded today and their corresponding encrypted filenames
 
