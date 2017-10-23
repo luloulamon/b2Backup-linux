@@ -5,7 +5,7 @@
 
 ##########################################################################################
 
-##Encryption method:
+## Encryption method:
 
 Uses OpenSSL with a password key file (tested using an RSA key generated via ssh-keygen)
 
@@ -18,42 +18,30 @@ Filenames are also base64'd after the encryption to ensure they are valid as fil
 Uses AES-256-CBC as well for the file encryption, this is simplified by not adding a salt for reduced complexity on decryption. 
 
 
-##REQUIREMENT:
+## REQUIREMENT:
 Since this is a bash script, this obviously requires BASH. 
 
-This is currently tested and being run on Windows 10 with the Ubuntu BASH shell system running. Caveat on running it within Windows is that it needs to run using SUDO or as root. 
+This is currently tested and being run on Windows 10 with the Ubuntu BASH shell system running as well as ArchLinux.
+
+**Caveat on running it within Windows is that it needs to run using SUDO or as root even if it is only running to backup user directories.**
 
 Read about it here: https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/
 
 
 
-Files:
-client.config - Required to have variables set for configuration 
+## Files:
 
-##########################################################################
-
- bucketName="laptop" 
- initialSyncFile="initialSync.config" #sync file to state last sync date
- dirsList="DirsToBackup.config"
- tempFolder="/tmp"   #folder to store temp files as they are uploaded into B2. These are cleaned after run
- logFile="backup.log"
- uploadLog="upload.log"
- key1="id_rsa.pub.key"
- key2="id_rsa.key"
- fileModifiedAge="1 week ago"
- DEBUG="1"
-
-##########################################################################
+client.config - Required to have variables set for configuration
 
 DirsToBackup.config - List of directory paths to check for files and backup, creates a blank one when not available.
 
 apikey.config - file that contains the Backblaze App API key in the format "ACCOUNTID:APIKEY" where the account id and API key are separated by ":"
 
-##DEBUG:
+### DEBUG:
 
 Can enable debug logging and terminal echo by enabling DEBUG=1 on the client.config file.
 
-##LOGS:
+### LOGS:
 
 upload log - stores a manifest/list of all files uploaded today and their corresponding encrypted filenames
 

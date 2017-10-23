@@ -93,3 +93,11 @@ function checkBinaries {
 		echo "all good."
 	fi
 }
+
+function restoreFilePath {
+	echo "stub"
+}
+
+function restoreFile {
+	echo "stub"
+}
