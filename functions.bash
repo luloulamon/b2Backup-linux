@@ -80,3 +80,16 @@ function encryptFileName {
 function backup {
 	echo "hello stub for backup function"
 }
+
+function checkBinaries {
+	checkB2=$(b2 version | grep version | wc -l)
+	checkOpenssl=$(openssl version -a | grep OPENSSLDIR | wc -l )
+
+	if [ checkB2 -lt "1" || checkOpenssl -lt "1" && "$DEBUG" -eq "1" ]
+	then
+		echo "Check your pre-requisite binaries are installed... i.e. b2 cli, openssl"
+		exit 400
+	else
+		echo "all good."
+	fi
+}

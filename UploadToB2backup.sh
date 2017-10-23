@@ -15,6 +15,7 @@ echo "$dirsList" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
 b2 authorize-account "$accountId" "$apiKey"| ifDebug
 
+echo "Checking binaries.." + checkBinaries | ifDebug
 
 echo "Checking config files" | writeLog
 
