@@ -13,6 +13,7 @@ source "client.config" #read config entries from client config file
 source "functions.bash" #read functions file
 accountId=$(cut -f1 -d : "$apiKeyFile" |  tr -d '[:space:]') #read api credentials from config file
 apiKey=$(cut -f2 -d : "$apiKeyFile" |  tr -d '[:space:]')
+latestLog=$(getLatestUploadLog)
 
 currTime=$(date)
 echo "Backup Script Starting... $currTime" | writeLog
@@ -26,7 +27,7 @@ echo "Checking config files" | writeLog
 
 #check initialSync file exists
 echo "Checking sync file" | writeLog
-if [ -f "$initialSyncFile" ]; then 
+if [ -f "$initialSyncFile" ]; then
 	initialSync=$(head -n 1 "$initialSyncFile")
 	echo "First line: $initialSync and length is ${#initialSync}" | ifDebug
 	if [  ${#initialSync} -eq 0 ]; then #check if the file is empty or null
@@ -34,7 +35,7 @@ if [ -f "$initialSyncFile" ]; then
 	else
 		echo "Sync File Read" | writeLog
 	fi
-else 
+else
 	echo "No sync file, creating blank sync file" | writeLog
     touch "$initialSyncFile"
 fi #initialSync check end
@@ -48,7 +49,7 @@ if [ -f "$dirsList" ]; then
 else
 	echo "No directory list - touching to create file, enter directories to back up in this file" | writeLog
 	touch "$dirsList"
-fi 
+fi
 
 echo "Done checking config files" | writeLog
 
@@ -57,12 +58,12 @@ if [ ${#initialSync} -eq 0  ]; then
 	echo "Initial Sync running..." | writeLog
     echo "directory ${#dirs[@]}" | ifDebug
     counter=0
-    
+
 	#iterate through all directories in the dir list file
 	for i in "${dirs[@]}"
 	do
 	    echo "Current dir $i" | ifDebug
-		
+
 		#read the find results and place into array properly, this covers files with special chars in the names
 		files=()
         #iterate through all the files in the dir
@@ -77,24 +78,24 @@ if [ ${#initialSync} -eq 0  ]; then
 		if [ "$DEBUG" -eq "0" ]; then
 		        REPLY="y"
 		fi
-		
+
 		#Get response from user for debugging
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
 			for j in "${files[@]}"
 			do
-				
+
 				fullpath=$(realpath "$j")
 				echo "Uploading $fullpath" | writeLog
-				
+
 				filename=$(encryptFileName "$j") #create encrypted filename
-				
+
 				echo "Filename $filename" | ifDebug
 				#echo -en "\n"
-				
+
 				encryptFile "$j" "$filename"    #Encrypt file via function
 				counter=$((counter + 1))   #increase upload counter
-				
+
 			done
 		else
 			exit 500
@@ -115,7 +116,12 @@ else
 		#read the find results and place into array properly, this covers files with special chars in the names
 		files=()
 		while IFS=  read -r -d $'\0'; do
-			files+=("$REPLY")
+			toAdd="$(checkFileUploaded $REPLY)"
+			if [ "$toAdd" -gt "0" ]
+			then
+				echo "File is in log - $REPLY" | ifDebug
+				files+=("$REPLY")
+			fi
 		done < <(find "$i" -type f -newerct "$initialSync" -print0) #known issue where this seems to only work based on day and not the exact time.... so all files created or modified on the same day will be backed up again.
 		echo "File list ${files[@]}" | ifDebug
 
@@ -123,24 +129,24 @@ else
 		read -p "Do you want to start backing up? " -n 1 -r
 		echo ""
 		if [ "$DEBUG" -eq "0" ]; then
-		        REPLY="y"
+		        ANSWER="y"
 		fi
-		if [[ $REPLY =~ ^[Yy]$ ]]
+		if [[ $ANSWER =~ ^[Yy]$ ]]
 		then
 			for j in "${files[@]}"
 			do
-				
+
 				fullpath=$(realpath "$j")
 				echo "Uploading $fullpath" | writeLog
-				
+
 				filename=$(encryptFileName "$j") #create encrypted filename
-				
+
 				echo "Filename $filename" | ifDebug
 				#echo -en "\n"
-				
+
 				encryptFile "$j" "$filename"
-				counter=$((counter + 1)) 
-				
+				counter=$((counter + 1))
+
 			done
 		else
 			exit 500

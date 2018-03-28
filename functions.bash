@@ -55,9 +55,9 @@ function ifDebug {
 
 function encryptFile {
 
-    fullpath=$(realpath "$1")	
+    fullpath=$(realpath "$1")
     #filename=$2
-    encName=$2     
+    encName=$2
 	echo "ENCFUNC:: $fullpath  2ND PARAMETER: $encName " | ifDebug
 	openssl enc -e -in "$fullpath" -aes-256-cbc -pass file:"$key2" -nosalt > "$tempFolder/$encName" #create encrypted file to upload to backblaze
 	filechecksum=$(sha1sum "$tempFolder/$encName" | awk '{print $1}') #create a file checksum for encrypted file for backblaze upload confirmation
@@ -69,8 +69,8 @@ function encryptFile {
 }
 
 function encryptFileName {
-    
-    fullpath=$(realpath "$1")	
+
+    fullpath=$(realpath "$1")
 	#simplistic encryption of the full path and name to obfuscate the backup names
 	encFileName=$(echo "$fullpath" | openssl enc -base64 -A -aes-256-cbc -pass file:"$key1" -nosalt | base64 | tr -d "\n" ) #create encrypted filename, encode with base64 to ensure it is clean and can be used as filename
 	fileChecksum=$(sha1sum "$fullpath" | awk '{print $1}') #create filechecksum to add as part of filename
@@ -107,4 +107,20 @@ function restoreFile {
 	b2 download-file-by-name "$bucketName" "$fileToRestore" "$tempFolder/$tempFilename"
 	openssl enc -d -in "$tempFolder/$tempFilename" -aes-256-cbc -pass file:"$key2" -nosalt > "$localFile" #create encrypted file to upload to backblaze
 	echo "Restored $localFile"
+}
+
+##Grab the name of the latest log file
+function getLatestUploadLog {
+  shortName="${uploadLog:0:5}"
+  latest=$(ls -lt $shortName* | awk '{print $9}' | head -n1 )
+  echo $latest
+}
+
+##check if the file being checked is in the log
+function checkFileUploaded {
+  checkFile="$1"
+  logPath=$(dirname $0)
+  logPath=$(realpath $logPath)
+  inFile=$(cat $logPath/$latestLog | grep $checkFile | wc -l)
+  echo $inFile
 }
