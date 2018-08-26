@@ -73,14 +73,14 @@ if [ ${#initialSync} -eq 0  ]; then
 		echo "Files in list ${#files[@]}" | ifDebug
 
 
-		read -p "Do you want to start backing up? " -n 1 -r
-		echo ""
+		read -p "Do you want to start backing up? " -r ANSWER
+		echo "$ANSWER yooo"
 		if [ "$DEBUG" -eq "0" ]; then
-		        REPLY="y"
+		        ANSWER="y"
 		fi
 
 		#Get response from user for debugging
-		if [[ $REPLY =~ ^[Yy]$ ]]
+		if [[ $ANSWER =~ ^[Yy]$ ]]
 		then
 			for j in "${files[@]}"
 			do
@@ -126,7 +126,7 @@ else
 		echo "File list ${files[@]}" | ifDebug
 
 		#iterate through all the files in the dir
-		read -p "Do you want to start backing up? " -n 1 -r
+		read -p "Do you want to start backing up? " -r ANSWER
 		echo ""
 		if [ "$DEBUG" -eq "0" ]; then
 		        ANSWER="y"
