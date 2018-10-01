@@ -16,10 +16,11 @@ apiKey=$(cut -f2 -d : "$apiKeyFile" |  tr -d '[:space:]')
 latestLog=$(getLatestUploadLog)
 
 currTime=$(date)
+echo "DEBUG IS ON.............$DEBUG" | ifDebug
 echo "Backup Script Starting... $currTime" | writeLog
 echo "$dirsList" | ifDebug
 echo "Account ID: $accountId $apiKey" | ifDebug
-b2 authorize-account "$accountId" "$apiKey"| ifDebug
+b2 authorize-account "$accountId" "$apiKey"| writeLog 
 
 echo "Checking binaries.." $(checkBinaries) | ifDebug
 
@@ -72,11 +73,12 @@ if [ ${#initialSync} -eq 0  ]; then
 		done < <(find "$i" -type f -print0)
 		echo "Files in list ${#files[@]}" | ifDebug
 
-
-		read -p "Do you want to start backing up? " -r ANSWER
-		echo "$ANSWER yooo"
-		if [ "$DEBUG" -eq "0" ]; then
+		echo "lololo $DEBUG"		
+		if [ "$DEBUG" -eq 0 ]; then
 		        ANSWER="y"
+		else
+			read -p "Do you want to start backing up? " -r ANSWER
+			echo "$ANSWER yooo"
 		fi
 
 		#Get response from user for debugging
@@ -126,11 +128,13 @@ else
 		echo "File list ${files[@]}" | ifDebug
 
 		#iterate through all the files in the dir
-		read -p "Do you want to start backing up? " -r ANSWER
-		echo ""
 		if [ "$DEBUG" -eq "0" ]; then
 		        ANSWER="y"
+	 	else
+                        read -p "Do you want to start backing up? " -r ANSWER
+                        echo "$ANSWER yooo"
 		fi
+
 		if [[ $ANSWER =~ ^[Yy]$ ]]
 		then
 			for j in "${files[@]}"
