@@ -122,8 +122,9 @@ else
 			if [ "$toAdd" -gt "0" ]
 			then
 				echo "File is in log - $REPLY" | ifDebug
-				files+=("$REPLY")
 			fi
+			
+			files+=("$REPLY") #moved out of the if statement to add all files for now.
 		done < <(find "$i" -type f -newerct "$initialSync" -print0) #known issue where this seems to only work based on day and not the exact time.... so all files created or modified on the same day will be backed up again.
 		echo "File list ${files[@]}" | ifDebug
 
@@ -158,5 +159,6 @@ else
 	done
 	currTime=$(date)
 	echo "Total Files Uploaded: $counter"
+	echo "$currTime" > $initialSyncFile
 	echo "Update Sync Done $currTime" | writeLog
 fi
